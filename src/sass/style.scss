@@ -1,0 +1,79 @@
+$font-family-sans-serif: 'Roboto', "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+@import "../../bower_components/sass-flex-mixin/flexbox";
+@import "../../bower_components/skeleton-sass/skeleton/themes/fresh/_base.scss";
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+html{
+  font-size: 12px;
+  height: 100%;
+}
+
+body{
+  margin: 0 auto;
+  padding: 0;
+  max-width: $base-width;
+  height: 100%;
+
+  overflow-x: hidden;
+
+  //background: rgba(#ddd, .5) url("../img/ricepaper_v3.png");
+
+}
+
+
+.flexbox{
+  @extend %flexbox;
+}
+
+.layout-column{
+  @include flexbox;
+  @include flex-direction(column);
+}
+.layout-row{
+  @include flexbox;
+  @include flex-direction(row);
+  @include align-content(stretch)
+}
+
+.flex{
+  @include flex();
+}
+
+header{
+  position: fixed;
+  max-width: $base-width;
+  z-index: 1000;
+
+  width: 100%;
+
+  ul.top-menu{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    li{
+      background: rgba(#222, .8);
+      color: white;
+
+      padding: .3em .8em;
+      &.active{
+        background: transparent;
+      }
+      &.disabled{
+        background: transparent;
+      }
+    }
+  }
+  .header-filler{
+    background: red;
+  }
+}
+
+footer{
+  @extend %flexbox;
+  @include justify-content(flex-end);
+}
+
+
