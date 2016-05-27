@@ -40,27 +40,27 @@ var sources = {
     vendor: {
         paths: {
             prod: [
-                // "bower_components/lodash/dist/lodash.min.js",
-                "bower_components/angular/angular.min.js",
-                "bower_components/angular-animate/angular-animate.min.js",
-                "bower_components/angular-aria/angular-aria.min.js",
-                "bower_components/angular-messages/angular-messages.min.js",
-                // "bower_components/angular-material/angular-material.min.js",
-                "bower_components/angular-ui-router/release/angular-ui-router.js",
-                "bower_components/angular-material/modules/js/core/core.js",
-                "bower_components/angular-material/modules/js/input/input.js",
+                // "node_modules/lodash/dist/lodash.min.js",
+                "node_modules/angular/angular.min.js",
+                "node_modules/angular-animate/angular-animate.min.js",
+                "node_modules/angular-aria/angular-aria.min.js",
+                "node_modules/angular-messages/angular-messages.min.js",
+                // "node_modules/angular-material/angular-material.min.js",
+                "node_modules/angular-ui-router/release/angular-ui-router.js",
+                "node_modules/angular-material/modules/js/core/core.js",
+                "node_modules/angular-material/modules/js/input/input.js",
 
             ],
             dev: [
-                // "bower_components/lodash/dist/lodash.js",
-                "bower_components/angular/angular.js",
-                "bower_components/angular-animate/angular-animate.js",
-                "bower_components/angular-aria/angular-aria.js",
-                "bower_components/angular-messages/angular-messages.js",
-                // "bower_components/angular-material/angular-material.js",
-                "bower_components/angular-ui-router/release/angular-ui-router.min.js",
-                "bower_components/angular-material/modules/js/core/core.min.js",
-                "bower_components/angular-material/modules/js/input/input.min.js",
+                // "node_modules/lodash/dist/lodash.js",
+                "node_modules/angular/angular.js",
+                "node_modules/angular-animate/angular-animate.js",
+                "node_modules/angular-aria/angular-aria.js",
+                "node_modules/angular-messages/angular-messages.js",
+                // "node_modules/angular-material/angular-material.js",
+                "node_modules/angular-ui-router/release/angular-ui-router.min.js",
+                "node_modules/angular-material/modules/js/core/core.min.js",
+                "node_modules/angular-material/modules/js/input/input.min.js",
             ]
         }
     },
@@ -165,7 +165,7 @@ gulp.task('assets-prod', copyAssets.bind(this, 'prod'));
 gulp.task('connect', function () {
     return connect.server({
         root: '.tmp',
-        port: 9080,
+        port: 9901,
         livereload: true
     })
 })
