@@ -3,7 +3,7 @@ angular.module('app', [
         'ngMessages',
         'ngAria',
         'ui.router',
-        'material.components.input',
+        'ngMaterial',
         'app.layout',
         'app.tripType'
     ])

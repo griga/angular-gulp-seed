@@ -1,24 +1,24 @@
-// sails dependencies
-// npm install ejs rc sails sails-disk sails-mongo
-// gulp dependencies 
-// npm install event-stream gulp gulp-concat gulp-angular-templatecache gulp-ng-annotate gulp-uglify gulp-babel babel-preset-es2015 lodash gulp-sass gulp-livereload --save-dev
-// bower install lodash moment codemirror angular angular-resource angular-animate angular-aria angular-messages angular-material  angular-ui-router angular-ui-codemirror 
+const es = require('event-stream');
+const gulp = require('gulp');
+const concat = require('gulp-concat');
+const templateCache = require('gulp-angular-templatecache');
+const ngAnnotate = require('gulp-ng-annotate');
+const uglify = require('gulp-uglify');
+const fs = require('fs');
+const babel = require('gulp-babel')
+const iife = require('gulp-iife')
+const _ = require('lodash');
+const sass = require('gulp-sass');
+const connect = require('gulp-connect');
+const open = require('gulp-open');
+const gulpIf = require('gulp-if');
 
-var es = require('event-stream');
-var gulp = require('gulp');
-var concat = require('gulp-concat');
-var templateCache = require('gulp-angular-templatecache');
-var ngAnnotate = require('gulp-ng-annotate');
-var uglify = require('gulp-uglify');
-var fs = require('fs');
-var babel = require('gulp-babel')
-var iife = require('gulp-iife')
-var _ = require('lodash');
-var sass = require('gulp-sass');
-var connect = require('gulp-connect');
-var gulpIf = require('gulp-if');
 
-var sources = {
+const conf = {
+    host: 'localhost',
+    port: 10020,
+}
+const sources = {
     app: {
         main: 'src/app/main.js',
         src: [
@@ -45,10 +45,8 @@ var sources = {
                 "node_modules/angular-animate/angular-animate.min.js",
                 "node_modules/angular-aria/angular-aria.min.js",
                 "node_modules/angular-messages/angular-messages.min.js",
-                // "node_modules/angular-material/angular-material.min.js",
+                "node_modules/angular-material/angular-material.min.js",
                 "node_modules/angular-ui-router/release/angular-ui-router.js",
-                "node_modules/angular-material/modules/js/core/core.js",
-                "node_modules/angular-material/modules/js/input/input.js",
 
             ],
             dev: [
@@ -57,10 +55,8 @@ var sources = {
                 "node_modules/angular-animate/angular-animate.js",
                 "node_modules/angular-aria/angular-aria.js",
                 "node_modules/angular-messages/angular-messages.js",
-                // "node_modules/angular-material/angular-material.js",
+                "node_modules/angular-material/angular-material.js",
                 "node_modules/angular-ui-router/release/angular-ui-router.min.js",
-                "node_modules/angular-material/modules/js/core/core.min.js",
-                "node_modules/angular-material/modules/js/input/input.min.js",
             ]
         }
     },
@@ -76,7 +72,7 @@ var sources = {
 
 };
 
-var destinations = {
+const destinations = {
     dev: {
         root: "./.tmp",
         js: './.tmp/js',
@@ -165,14 +161,19 @@ gulp.task('assets-prod', copyAssets.bind(this, 'prod'));
 gulp.task('connect', function () {
     return connect.server({
         root: '.tmp',
-        port: 9901,
+        port: conf.port,
         livereload: true
     })
 })
 
+gulp.task('open', function () {
+    return gulp.src(__filename)
+        .pipe(open({uri: 'http://' + conf.host + ':' + conf.port}));
+});
+
 
 gulp.task('prod', ['vendor-prod', 'vendor-css-prod', 'sass-prod', 'compile-prod', 'assets-prod']);
-gulp.task('dev', ['connect', 'vendor-dev', 'vendor-css-dev', 'sass-dev', 'compile-dev', 'watch', 'assets-dev']);
+gulp.task('dev', ['connect', 'vendor-dev', 'vendor-css-dev', 'sass-dev', 'compile-dev', 'watch', 'assets-dev', 'open']);
 gulp.task('default', ['dev']);
 
 var swallowError = function (error) {
