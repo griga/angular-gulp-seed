@@ -93,7 +93,9 @@ function compile(appName, target) {
         .pipe(babel({
             presets: ['es2015']
         }))
-        .pipe(iife())
+        .pipe(iife({
+            useStrict: false
+        }))
         .on('error', swallowError)
         .pipe(concat(sources[appName].out))
         .pipe(gulpIf(target == 'prod', ngAnnotate()))
