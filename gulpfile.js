@@ -5,8 +5,7 @@ const templateCache = require('gulp-angular-templatecache');
 const ngAnnotate = require('gulp-ng-annotate');
 const uglify = require('gulp-uglify');
 const fs = require('fs');
-const babel = require('gulp-babel')
-const iife = require('gulp-iife')
+const babel = require('gulp-babel');
 const _ = require('lodash');
 const sass = require('gulp-sass');
 const connect = require('gulp-connect');
@@ -91,10 +90,8 @@ function compile(appName, target) {
         gulp.src(sources[appName].src)
         , getTemplateStream(appName))
         .pipe(babel({
-            presets: ['es2015']
-        }))
-        .pipe(iife({
-            useStrict: false
+            presets: ['es2015'],
+            plugins: ['iife-wrap']
         }))
         .on('error', swallowError)
         .pipe(concat(sources[appName].out))
