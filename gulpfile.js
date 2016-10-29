@@ -1,189 +1,253 @@
-const es = require('event-stream');
-const gulp = require('gulp');
-const concat = require('gulp-concat');
-const templateCache = require('gulp-angular-templatecache');
-const ngAnnotate = require('gulp-ng-annotate');
-const uglify = require('gulp-uglify');
-const fs = require('fs');
-const babel = require('gulp-babel');
-const _ = require('lodash');
-const sass = require('gulp-sass');
-const connect = require('gulp-connect');
-const open = require('gulp-open');
-const gulpIf = require('gulp-if');
+var fs = require('fs');
+var path = require('path');
 
+var argv = require('yargs').argv;
 
-const conf = {
-    host: 'localhost',
-    port: 10020,
-}
-const sources = {
-    app: {
-        main: 'src/app/main.js',
-        src: [
-            'src/app/main.js',
-            'src/app/app.js',
-            'src/app/**/*module.js',
-            'src/app/**/!(module)*.js'
-        ],
-        html: 'src/app/**/*.html',
-        out: 'bundle.js',
-    },
-    sass: {
-        main: 'src/sass/style.scss',
-        src: [
-            'src/sass/**/*.scss',
-        ]
-    },
-    css: [],
-    vendor: {
-        paths: {
-            prod: [
-                // "node_modules/lodash/dist/lodash.min.js",
-                "node_modules/angular/angular.min.js",
-                "node_modules/angular-animate/angular-animate.min.js",
-                "node_modules/angular-aria/angular-aria.min.js",
-                "node_modules/angular-messages/angular-messages.min.js",
-                "node_modules/angular-material/angular-material.min.js",
-                "node_modules/angular-ui-router/release/angular-ui-router.js",
+var es = require('event-stream');
+var gulp = require('gulp');
+var concat = require('gulp-concat');
+var templateCache = require('gulp-angular-templatecache');
+var ngAnnotate = require('gulp-ng-annotate');
+var uglify = require('gulp-uglify');
+var babel = require('gulp-babel')
+var iife = require('gulp-iife')
+var _ = require('lodash');
+var sass = require('gulp-sass');
+var autoprefixer = require('gulp-autoprefixer');
+var inject = require('gulp-inject-string');
+var connect = require('gulp-connect');
+var gulpIf = require('gulp-if');
 
-            ],
-            dev: [
-                // "node_modules/lodash/dist/lodash.js",
-                "node_modules/angular/angular.js",
-                "node_modules/angular-animate/angular-animate.js",
-                "node_modules/angular-aria/angular-aria.js",
-                "node_modules/angular-messages/angular-messages.js",
-                "node_modules/angular-material/angular-material.js",
-                "node_modules/angular-ui-router/release/angular-ui-router.min.js",
-            ]
-        }
-    },
-    assets: {
-        src: [
-            'src/static/**/*.*'
-        ]
-    },
-    html: {
-        main: 'src/index.html'
-    }
+var spritesmith = require('gulp.spritesmith');
+
+var staticHash = require('gulp-static-hash');
+var del = require('del');
+
+var TARGET = argv.prod ? 'prod' : 'dev';
+
+var sources = {
+  app: {
+    main: './src/app/main.js',
+    src: [
+      './src/app/main.js',
+      './src/app/app.js',
+      './src/app/**/*module.js',
+      './src/app/**/!(module)*.js'
+    ],
+    html: './src/app/**/*.html',
+    out: 'bundle.js',
+  },
+  sass: {
+    main: 'src/sass/style.scss',
+    src: [
+      'src/sass/**/*.scss',
+    ]
+  },
+  css: [],
+  vendor: {
+    prod: [
+      // "node_modules/lodash/dist/lodash.min.js",
+      "node_modules/angular/angular.min.js",
+      "node_modules/angular-mocks/angular-mocks.js",
+      "node_modules/angular-animate/angular-animate.min.js",
+      "node_modules/angular-aria/angular-aria.min.js",
+      "node_modules/angular-messages/angular-messages.min.js",
+      "node_modules/angular-material/angular-material.min.js",
+      "node_modules/angular-ui-router/release/angular-ui-router.js",
+
+    ],
+    dev: [
+      // "node_modules/lodash/dist/lodash.js",
+      "node_modules/angular/angular.js",
+      "node_modules/angular-mocks/angular-mocks.js",
+      "node_modules/angular-animate/angular-animate.js",
+      "node_modules/angular-aria/angular-aria.js",
+      "node_modules/angular-messages/angular-messages.js",
+      "node_modules/angular-material/angular-material.js",
+      "node_modules/angular-ui-router/release/angular-ui-router.min.js",
+    ]
+  },
+  assets: {
+    src: [
+      'src/static/**/*.*',
+      '!src/static/img/icons/**/*'
+    ]
+  },
+  sprite: {
+    src: ['./src/static/img/icons/**/*.png']
+  },
+  cleanup: {
+    dev: ['.tmp/**/*'],
+    prod: ['dist/**/*'],
+  },
+  html: {
+    main: 'src/index.html'
+  }
 
 
 };
 
-const destinations = {
-    dev: {
-        root: "./.tmp",
-        js: './.tmp/js',
-        css: './.tmp/css',
-    },
-    prod: {
-        root: "./dist",
-        js: './dist/js',
-        css: './dist/css',
-    },
+var destinations = {
+  dev: {
+    root: "./.tmp",
+    js: './.tmp/js',
+    css: './.tmp/css',
+    img: './.tmp/img',
+  },
+  prod: {
+    root: "./dist",
+    js: './dist/js',
+    css: './dist/css',
+    img: './dist/img',
+  },
 };
 
 
-function compile(appName, target) {
+
+gulp.task('compile', function () {
     var bundle = es.merge(
-        gulp.src(sources[appName].src)
-        , getTemplateStream(appName))
-        .pipe(babel({
-            presets: ['es2015'],
-            plugins: ['iife-wrap']
-        }))
-        .on('error', swallowError)
-        .pipe(concat(sources[appName].out))
-        .pipe(gulpIf(target == 'prod', ngAnnotate()))
-        .pipe(gulpIf(target == 'prod', uglify()))
+      gulp.src(sources.app.src)
+      , getTemplateStream())
+      .pipe(babel({
+        presets: ['es2015']
+      }))
+      .pipe(iife({
+        useStrict: false,
+      }))
+      .on('error', swallowError)
 
-    return bundle.pipe(gulp.dest(destinations[target].js)).pipe(connect.reload());
-}
+      .pipe(concat(sources.app.out))
+      .pipe(gulpIf(TARGET == 'prod', ngAnnotate()))
+      .pipe(gulpIf(TARGET == 'prod', uglify()))
+      .pipe(inject.prepend(';window.AIRWANDER_GLOBALS={environment: "' + TARGET + '"};'))
 
-gulp.task('compile-dev', compile.bind(this, 'app', 'dev'))
-gulp.task('compile-prod', compile.bind(this, 'app', 'prod'))
+
+
+  return bundle.pipe(gulp.dest(destinations[TARGET].js)).pipe(connect.reload());
+  }
+)
 
 gulp.task('watch', function () {
-    gulp.watch(sources.sass.src, ['sass-dev']);
-    gulp.watch(sources.app.src, ['compile-dev']);
-    gulp.watch(sources.app.html, ['compile-dev']);
-    gulp.watch(sources.assets.src, ['assets-dev']);
+  gulp.watch(sources.sass.src, ['sass']);
+  gulp.watch(sources.app.src, ['compile']);
+  gulp.watch(sources.app.html, ['compile']);
+  gulp.watch(sources.assets.src, ['assets']);
+  gulp.watch(sources.sprite.src, ['sprite', 'sass']);
 });
 
 
-function vendorJs(target) {
-    var paths = sources.vendor.paths[target]
+gulp.task('vendor', function () {
+    var paths = sources.vendor[TARGET]
     paths.forEach(function (p) {
-        if (!fs.existsSync(__dirname + '/' + p)) {
-            throw new Error(p + ' not exist')
-        }
+      if (!fs.existsSync(__dirname + '/' + p)) {
+        throw new Error(p + ' not exist')
+      }
     });
     return gulp.src(paths)
-        .pipe(concat('vendor.bundle.js'))
-        //.on('error', swallowError)
-        .pipe(gulp.dest(destinations[target].js))
-}
-gulp.task('vendor-prod', vendorJs.bind(this, 'prod'));
-gulp.task('vendor-dev', vendorJs.bind(this, 'dev'));
+
+      .pipe(concat('vendor.bundle.js'))
+      //.on('error', swallowError)
+      .pipe(gulp.dest(destinations[TARGET].js))
+  }
+);
 
 
-function vendorCss(target) {
+gulp.task('vendor-css', function () {
     return gulp.src(sources.css)
-        .pipe(concat('bundle.css'))
-        .pipe(gulp.dest(destinations[target].css))
-}
-gulp.task('vendor-css-dev', vendorCss.bind(this, 'dev'))
-gulp.task('vendor-css-prod', vendorCss.bind(this, 'prod'))
+      .pipe(concat('bundle.css'))
+      .pipe(gulp.dest(destinations[TARGET].css))
+  }
+)
 
 
-function compileSass(target) {
+gulp.task('sass', function() {
     return gulp.src(sources.sass.src)
-        .pipe(sass().on('error', sass.logError))
-        .pipe(gulp.dest(destinations[target].css))
-        .pipe(connect.reload());
-}
-
-gulp.task('sass-dev', compileSass.bind(this, 'dev'));
-gulp.task('sass-prod', compileSass.bind(this, 'prod'));
-
-function copyAssets(target) {
-    return gulp.src(sources.assets.src)
-        .pipe(gulp.dest(destinations[target].root))
-        .pipe(connect.reload())
-}
-
-gulp.task('assets-dev', copyAssets.bind(this, 'dev'));
-gulp.task('assets-prod', copyAssets.bind(this, 'prod'));
+      .pipe(sass().on('error', sass.logError))
+      .pipe(gulpIf(TARGET == 'prod', autoprefixer()))
+      .pipe(gulp.dest(destinations[TARGET].css))
+      // .pipe(references(gulp.src(sources.html.main)))
+      .pipe(connect.reload());
+  }
+);
 
 
-gulp.task('connect', function () {
-    return connect.server({
-        root: '.tmp',
-        port: conf.port,
-        livereload: true
-    })
+gulp.task('rev', function(){
+  return gulp.src('./dist/index.html')
+    .pipe(staticHash())
+    .pipe(gulp.dest(destinations.prod.root));
+
 })
 
-gulp.task('open', function () {
-    return gulp.src(__filename)
-        .pipe(open({uri: 'http://' + conf.host + ':' + conf.port}));
+
+gulp.task('assets', function () {
+    return gulp.src(sources.assets.src)
+      .pipe(gulp.dest(destinations[TARGET].root))
+      .pipe(connect.reload())
+  }
+);
+
+
+gulp.task('cleanup', function () {
+  return del(sources.cleanup[TARGET])
 });
 
 
-gulp.task('prod', ['vendor-prod', 'vendor-css-prod', 'sass-prod', 'compile-prod', 'assets-prod']);
-gulp.task('dev', ['connect', 'vendor-dev', 'vendor-css-dev', 'sass-dev', 'compile-dev', 'watch', 'assets-dev', 'open']);
+gulp.task('sprite', function () {
+  var spriteData = gulp.src(sources.sprite.src).pipe(spritesmith({
+    imgName: 'sprite.png',
+    imgPath: '../img/sprite.png',
+    cssName: '_sprite.scss'
+  }));
+  return spriteData.pipe(gulpIf('*.png', gulp.dest(
+    destinations[TARGET].img), gulp.dest('./src/sass/components/')));
+});
+
+
+gulp.task('serve', function () {
+  return connect.server({
+    root: '.tmp',
+    port: 9080,
+    livereload: true
+  })
+})
+
+gulp.task('build', [
+  'cleanup',
+  'sprite',
+  'vendor',
+  'vendor-css',
+  'sass',
+  'compile',
+  'assets',
+  'rev',
+]);
+gulp.task('dev', [
+  'build',
+  'serve',
+  'watch',
+]);
 gulp.task('default', ['dev']);
 
 var swallowError = function (error) {
-    console.log(error.toString());
-    this.emit('end')
+  console.log(error.toString());
+  this.emit('end')
 };
 
-var getTemplateStream = function (key) {
-    return gulp.src(sources[key].html)
-        .pipe(templateCache({
-            root: 'app/',
-            module: 'ng'
-        }))
+var getTemplateStream = function () {
+  return gulp.src(sources.app.html)
+    .pipe(templateCache({
+      root: 'app/',
+      module: 'ng'
+    }))
 };
+
+
+gulp.task('imgd', function(){
+  let idir = path.resolve(__dirname, 'src/static/img/icons');
+  fs.readdirSync(idir).forEach(function(it){
+    fs.renameSync(
+      path.resolve(idir, it),
+      path.resolve(idir, it.replace(/_/gm, '-'))
+    )
+  })
+})
